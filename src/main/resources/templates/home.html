@@ -583,7 +583,7 @@ function showHelp() {
             </div>
             <div class="help-section">
                 <h5>🔍 検索機能</h5>
-                <p>検索バーでレシピ名やカテゴリで絞り込み検索ができます。</p>
+                <p>検索バーでレシピ名やカテゴリで絞り込み検索ができます。文字を入力してEnterキーを押すと検索が実行されます。</p>
             </div>
             <div class="help-section">
                 <h5>❤️ お気に入り</h5>
@@ -632,7 +632,7 @@ function showSettings() {
             <div class="settings-section">
                 <h5>ℹ️ アプリ情報</h5>
                 <p><strong>バージョン:</strong> 1.0.0</p>
-                <p><strong>最終更新:</strong> 2024年</p>
+                <p><strong>最終更新:</strong> 2025年</p>
             </div>
         </div>
     `;
@@ -723,11 +723,68 @@ function exportData() {
     alert('レシピデータをエクスポートしました！');
 }
 
-function confirmDataReset() {
+// 全データリセット機能の実装
+async function confirmDataReset() {
     if (confirm('⚠️ 警告\n\n全てのレシピデータが削除されます。\nこの操作は取り消すことができません。\n\n本当に実行しますか？')) {
         if (confirm('最終確認：本当に全データを削除しますか？')) {
-            // 実際の削除処理はサーバーサイドで実装する必要があります
-            alert('データリセット機能は現在開発中です。');
+            try {
+                // ローディング表示
+                const loadingMessage = document.createElement('div');
+                loadingMessage.innerHTML = '削除中です...しばらくお待ちください';
+                loadingMessage.style.cssText = `
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: rgba(0, 0, 0, 0.8);
+                    color: white;
+                    padding: 20px;
+                    border-radius: 8px;
+                    z-index: 9999;
+                    font-size: 16px;
+                    font-weight: bold;
+                `;
+                document.body.appendChild(loadingMessage);
+
+                // CSRFトークンを取得
+                const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+                const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+
+                // サーバーに削除リクエストを送信
+                const response = await fetch('/api/admin/reset-data', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        [csrfHeader]: csrfToken
+                    },
+                    credentials: 'same-origin'
+                });
+
+                // ローディング表示を削除
+                document.body.removeChild(loadingMessage);
+
+                if (response.ok) {
+                    const message = await response.text();
+                    alert('✅ ' + message);
+
+                    // ページをリロードしてUIを更新
+                    window.location.reload();
+                } else {
+                    const errorMessage = await response.text();
+                    throw new Error(errorMessage);
+                }
+
+            } catch (error) {
+                // エラー時のローディング表示削除
+                const loadingElement = document.querySelector('div[style*="position: fixed"]');
+                if (loadingElement) {
+                    document.body.removeChild(loadingElement);
+                }
+
+                console.error('データリセットエラー:', error);
+                alert('❌ データリセットに失敗しました: ' + error.message);
+            }
         }
     }
 }
@@ -935,7 +992,7 @@ function updateRecipeCount() {
     }
 }
 
-// 検索機能のイベントリスナー
+// 検索機能
 if (searchInput) {
     // Enterキーでの検索実行
     searchInput.addEventListener('keydown', function (event) {
@@ -943,15 +1000,6 @@ if (searchInput) {
             event.preventDefault();
             performSearch();
         }
-    });
-
-    // リアルタイム検索（入力中）
-    let searchTimeout;
-    searchInput.addEventListener('input', function() {
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(() => {
-            performSearch();
-        }, 300); // 300ms後に検索実行（連続入力時のパフォーマンス向上）
     });
 }
 

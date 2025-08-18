@@ -505,36 +505,46 @@ public class RecipeController {
     }
 
     /**
-     * レシピの一括削除（管理機能）
-     * 注意: 本番環境では適切な認証・認可を実装してください
+     * レシピの一括削除（管理機能）- 全データリセット機能の実装
      */
     @PostMapping("/api/admin/reset-data")
     @ResponseBody
     public ResponseEntity<String> resetAllData() {
         try {
+            System.out.println("全データリセット処理開始");
+
             // 画像ファイルも削除
             List<Recipe> allRecipes = recipeRepository.findAll();
             Path uploadPath = Paths.get(System.getProperty("user.dir"), "uploads");
+            int deletedImageCount = 0;
 
             for (Recipe recipe : allRecipes) {
                 if (recipe.getImagePath() != null) {
                     try {
                         Path imagePath = uploadPath.resolve(Paths.get(recipe.getImagePath()).getFileName());
-                        Files.deleteIfExists(imagePath);
+                        if (Files.deleteIfExists(imagePath)) {
+                            deletedImageCount++;
+                            System.out.println("画像削除成功: " + imagePath.getFileName());
+                        }
                     } catch (Exception imageDeleteError) {
-                        System.err.println("画像削除エラー: " + imageDeleteError.getMessage());
+                        System.err.println("画像削除エラー (継続): " + imageDeleteError.getMessage());
                     }
                 }
             }
 
-            // 全レシピを削除
+            // 全レシピをデータベースから削除
+            int recipeCount = allRecipes.size();
             recipeRepository.deleteAll();
 
-            System.out.println("全データがリセットされました。削除されたレシピ数: " + allRecipes.size());
-            return ResponseEntity.ok("データが正常にリセットされました。");
+            System.out.println("全データリセット完了:");
+            System.out.println("- 削除されたレシピ数: " + recipeCount);
+            System.out.println("- 削除された画像数: " + deletedImageCount);
+
+            return ResponseEntity.ok("データリセットが完了しました。削除されたレシピ: " + recipeCount + "件、画像: " + deletedImageCount + "件");
 
         } catch (Exception e) {
             System.err.println("データリセットエラー: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("データリセットに失敗しました: " + e.getMessage());
         }
