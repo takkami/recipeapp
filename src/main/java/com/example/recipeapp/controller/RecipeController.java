@@ -26,11 +26,12 @@ import java.util.NoSuchElementException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ArrayList;
+import java.util.Random;
 
 @Controller
 public class RecipeController {
 
-    private static final int MAX_CATEGORIES = 2; // 3から2に変更
+    private static final int MAX_CATEGORIES = 2;
 
     @Autowired
     private RecipeRepository recipeRepository;
@@ -42,11 +43,28 @@ public class RecipeController {
         return "home";
     }
 
-    // レシピ作成画面を表示
-    @GetMapping("/recipes/new")
-    public String showRecipeForm(Model model) {
-        model.addAttribute("recipe", new Recipe());
-        return "recipe_form";
+    // ランダムレシピ表示機能
+    @GetMapping("/recipes/random")
+    public String showRandomRecipe(Model model, RedirectAttributes redirectAttributes) {
+        List<Recipe> allRecipes = recipeRepository.findAll();
+
+        if (allRecipes.isEmpty()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "表示できるレシピがありません。");
+            return "redirect:/home";
+        }
+
+        // ランダムにレシピを1つ選択
+        Random random = new Random();
+        Recipe randomRecipe = allRecipes.get(random.nextInt(allRecipes.size()));
+
+        // 1つのレシピをリストに入れて表示
+        List<Recipe> randomRecipeList = new ArrayList<>();
+        randomRecipeList.add(randomRecipe);
+
+        model.addAttribute("recipes", randomRecipeList);
+        model.addAttribute("randomPage", true);
+        model.addAttribute("favoritesPage", false);
+        return "home";
     }
 
     // カテゴリ数をバリデーションするヘルパーメソッド（改善版）
@@ -159,6 +177,13 @@ public class RecipeController {
         }
 
         return "redirect:/home?loading=true";
+    }
+
+    // レシピ作成画面を表示
+    @GetMapping("/recipes/new")
+    public String showRecipeForm(Model model) {
+        model.addAttribute("recipe", new Recipe());
+        return "recipe_form";
     }
 
     // 編集画面を表示

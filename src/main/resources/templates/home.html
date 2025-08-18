@@ -68,9 +68,9 @@
                     </a>
                 </li>
                 <li>
-                    <a href="/home">
-                        <img src="/images/icons/book.svg" alt="レシピ一覧" />
-                        <span>レシピ一覧</span>
+                    <a href="/recipes/random">
+                        <img src="/images/icons/random.svg" alt="ランダムレシピ" />
+                        <span>ランダムレシピ</span>
                     </a>
                 </li>
                 <li>
@@ -137,8 +137,15 @@
             <div class="section-header">
                 <div class="section-title">
                     <h2 th:if="${favoritesPage != null and favoritesPage}" th:text="'お気に入りレシピ一覧 (' + ${#lists.size(recipes)} + '件)'">お気に入り</h2>
+                    <h2 th:if="${randomPage != null and randomPage}" th:text="'ランダムレシピ'">ランダムレシピ</h2>
                     <h2 th:if="${categoryName != null}" th:text="'カテゴリ：' + ${categoryName} + ' (' + ${#lists.size(recipes)} + '件)'">カテゴリ</h2>
-                    <h2 th:if="${favoritesPage == null and categoryName == null}" th:text="'すべてのレシピ一覧 (' + ${#lists.size(recipes)} + '件)'">すべてのレシピ</h2>
+                    <h2 th:if="${favoritesPage == null and randomPage == null and categoryName == null}" th:text="'すべてのレシピ一覧 (' + ${#lists.size(recipes)} + '件)'">すべてのレシピ</h2>
+                </div>
+                <div th:if="${randomPage != null and randomPage}" class="add-button-container">
+                    <a href="/recipes/random" class="add-button" onclick="showRandomLoadingEffect(event)">
+                        <span class="add-text">別のレシピ</span>
+                        <img src="/images/icons/random.svg" alt="ランダム">
+                    </a>
                 </div>
             </div>
 
@@ -287,6 +294,24 @@ class DarkModeManager {
 
 // グローバルダークモードマネージャーのインスタンス
 const darkModeManager = new DarkModeManager();
+
+// ランダムレシピボタンのローディング効果
+function showRandomLoadingEffect(event) {
+    event.preventDefault();
+
+    const button = event.currentTarget;
+    const originalText = button.querySelector('.add-text').textContent;
+
+    // ボタンテキストを変更
+    button.querySelector('.add-text').textContent = '選択中...';
+    button.style.opacity = '0.7';
+    button.style.pointerEvents = 'none';
+
+    // 短時間のローディング演出後にページ遷移
+    setTimeout(() => {
+        window.location.href = '/recipes/random';
+    }, 500);
+}
 
 // 検索機能の改善
 const searchInput = document.getElementById('searchInput');
@@ -584,6 +609,10 @@ function showHelp() {
             <div class="help-section">
                 <h5>🔍 検索機能</h5>
                 <p>検索バーでレシピ名やカテゴリで絞り込み検索ができます。文字を入力してEnterキーを押すと検索が実行されます。</p>
+            </div>
+            <div class="help-section">
+                <h5>🎲 ランダムレシピ</h5>
+                <p>サイドバーの「ランダムレシピ」で登録済みレシピからランダムに1つ表示されます。料理に迷った時にお使いください。</p>
             </div>
             <div class="help-section">
                 <h5>❤️ お気に入り</h5>

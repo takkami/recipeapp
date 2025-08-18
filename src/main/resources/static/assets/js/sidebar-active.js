@@ -26,18 +26,13 @@ function updateSidebarActiveState() {
             if (currentPath === '/recipes/favorites' && href === '/recipes/favorites' && !isCategoriesViewVisible) {
                 item.classList.add('active');
             }
+            // ランダムレシピページの判定
+            else if (currentPath === '/recipes/random' && href === '/recipes/random' && !isCategoriesViewVisible) {
+                item.classList.add('active');
+            }
             // ホームページでホームボタンの判定
             else if ((currentPath === '/home' || currentPath === '/') && href === '/home' && spanText === 'ホーム' && !isCategoriesViewVisible) {
                 item.classList.add('active');
-            }
-            // ホームページでレシピ一覧ボタンの判定（カテゴリビューが非表示の場合のみ）
-            else if ((currentPath === '/home' || currentPath === '/') && href === '/home' && spanText === 'レシピ一覧' && !isCategoriesViewVisible) {
-                // ホームボタンがアクティブでない場合のみレシピ一覧をアクティブに
-                const homeButton = document.querySelector('.sidebar .home-button');
-                const isHomeActive = homeButton && homeButton.closest('li').classList.contains('active');
-                if (!isHomeActive) {
-                    item.classList.add('active');
-                }
             }
         }
 
