@@ -19,6 +19,9 @@
     <!-- CSS -->
     <link rel="stylesheet" href="/assets/css/sanitize.css">
     <link rel="stylesheet" href="/assets/css/style.css">
+
+    <!-- jsPDF for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body class="page-home">
 
@@ -162,7 +165,7 @@
 
             <!-- レシピカード表示 -->
             <div class="card-list" th:if="${not #lists.isEmpty(recipes)}">
-                <section class="card" th:each="recipe : ${recipes}" th:attr="data-recipe-id=${recipe.id}">
+                <section class="card" th:each="recipe : ${recipes}" th:attr="data-recipe-id=${recipe.id}, data-reference=${recipe.reference}">
                     <div class="card-menu">
                         <button class="menu-toggle" aria-label="メニューを開く">︙</button>
                         <div class="menu-content">
@@ -172,7 +175,7 @@
                             <button type="button" class="delete-button" th:attr="data-recipe-id=${recipe.id}">削除</button>
                         </div>
                     </div>
-                    <div class="card-image-wrapper">
+                    <div class="card-image-wrapper clickable-card" onclick="handleCardClick(event)">
                         <img th:if="${recipe.imagePath != null}" th:src="@{${recipe.imagePath}}" alt="レシピ画像" class="card-image" loading="lazy" />
                         <img th:if="${recipe.imagePath == null}" th:src="@{/images/no-image.png}" alt="レシピ画像なし" class="card-no-image" loading="lazy" />
                         <div class="card-overlay">
@@ -407,7 +410,8 @@ async function showCategoriesPage() {
                 categories: Array.from(categoryElements).map(el => el.textContent.trim()),
                 isFavorite: heartImage ? heartImage.src.includes('heart_active') : false,
                 imagePath: recipeImage ? recipeImage.src : '',
-                hasImage: recipeImage ? !recipeImage.src.includes('no-image') : false
+                hasImage: recipeImage ? !recipeImage.src.includes('no-image') : false,
+                reference: card.getAttribute('data-reference') || ''
             };
         });
 
@@ -464,7 +468,7 @@ async function showCategoriesPage() {
 
             recipes.slice(0, 4).forEach(recipe => { // 最初の4件のみ表示
                 html += `
-                    <div class="category-recipe-card" data-recipe-id="${recipe.id}">
+                    <div class="category-recipe-card clickable-card" data-recipe-id="${recipe.id}" data-reference="${recipe.reference || ''}" onclick="handleCategoryCardClick(event)">
                         <div class="recipe-image-wrapper">
                             <img src="${recipe.imagePath}" alt="レシピ画像"
                                  class="${recipe.hasImage ? 'recipe-image' : 'recipe-no-image'}" loading="lazy" />
@@ -623,6 +627,10 @@ function showHelp() {
                 <p>サイドバーの「カテゴリ一覧」からカテゴリ別にレシピを表示できます。レシピ作成時はカテゴリを最大2つまで選択可能です。</p>
             </div>
             <div class="help-section">
+                <h5>🔗 参考URLの活用</h5>
+                <p>レシピに参考URLが設定されている場合、カードをクリックすると参考サイトが別タブで開きます。</p>
+            </div>
+            <div class="help-section">
                 <h5>✏️ 編集・削除</h5>
                 <p>レシピカードの「⋮」メニューから編集・削除ができます。</p>
             </div>
@@ -655,7 +663,7 @@ function showSettings() {
             </div>
             <div class="settings-section">
                 <h5>📊 データ管理</h5>
-                <button class="settings-btn" onclick="exportData()">📥 データをエクスポート</button>
+                <button class="settings-btn" onclick="exportData()">📄 PDFをエクスポート</button>
                 <button class="settings-btn danger" onclick="confirmDataReset()">🗑️ 全データリセット</button>
             </div>
             <div class="settings-section">
@@ -731,25 +739,122 @@ function loadSettingsInModal() {
 }
 
 function exportData() {
-    // レシピデータの簡易エクスポート
-    const recipes = Array.from(document.querySelectorAll('.card')).map(card => {
-        const title = card.querySelector('.overlay-title')?.textContent || '';
-        const categories = Array.from(card.querySelectorAll('.category-tag')).map(tag => tag.textContent);
-        const isFavorite = card.querySelector('.heart-image')?.src.includes('heart_active') || false;
-        return { title, categories, isFavorite };
-    });
+    try {
+        // jsPDFのインスタンス作成
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
 
-    const dataStr = JSON.stringify(recipes, null, 2);
-    const dataBlob = new Blob([dataStr], {type: 'application/json'});
-    const url = URL.createObjectURL(dataBlob);
+        // フォント設定（日本語対応のため）
+        doc.setFont("helvetica");
 
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'recipes-export.json';
-    link.click();
+        // PDFのタイトル
+        doc.setFontSize(20);
+        doc.text("Recipin' - レシピデータ", 20, 20);
 
-    URL.revokeObjectURL(url);
-    alert('レシピデータをエクスポートしました！');
+        // 出力日時
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('ja-JP') + ' ' + now.toLocaleTimeString('ja-JP');
+        doc.setFontSize(10);
+        doc.text("出力日時: " + dateStr, 20, 30);
+
+        // レシピデータの収集
+        const recipes = Array.from(document.querySelectorAll('.card')).map(card => {
+            const title = card.querySelector('.overlay-title')?.textContent || '';
+            const categories = Array.from(card.querySelectorAll('.category-tag')).map(tag => tag.textContent);
+            const isFavorite = card.querySelector('.heart-image')?.src.includes('heart_active') || false;
+            return { title, categories, isFavorite };
+        });
+
+        // 統計情報
+        const totalRecipes = recipes.length;
+        const favoriteRecipes = recipes.filter(r => r.isFavorite).length;
+        const allCategories = [...new Set(recipes.flatMap(r => r.categories))];
+
+        doc.setFontSize(14);
+        doc.text("=== 統計情報 ===", 20, 45);
+        doc.setFontSize(12);
+        doc.text("総レシピ数: " + totalRecipes + "件", 20, 55);
+        doc.text("お気に入り数: " + favoriteRecipes + "件", 20, 65);
+        doc.text("使用カテゴリ数: " + allCategories.length + "種類", 20, 75);
+
+        let yPosition = 90;
+
+        // レシピ一覧
+        doc.setFontSize(14);
+        doc.text("=== レシピ一覧 ===", 20, yPosition);
+        yPosition += 15;
+
+        doc.setFontSize(10);
+
+        recipes.forEach((recipe, index) => {
+            // ページが足りない場合は新しいページを追加
+            if (yPosition > 270) {
+                doc.addPage();
+                yPosition = 20;
+            }
+
+            const recipeNumber = (index + 1).toString().padStart(3, '0');
+            const favoriteIcon = recipe.isFavorite ? "[★]" : "[ ]";
+            const categoriesStr = recipe.categories.length > 0 ?
+                "[" + recipe.categories.join(", ") + "]" : "[未分類]";
+
+            // レシピタイトル（文字数制限）
+            const maxTitleLength = 35;
+            const displayTitle = recipe.title.length > maxTitleLength ?
+                recipe.title.substring(0, maxTitleLength) + "..." : recipe.title;
+
+            doc.text(recipeNumber + ". " + favoriteIcon + " " + displayTitle, 20, yPosition);
+            yPosition += 8;
+            doc.text("     " + categoriesStr, 20, yPosition);
+            yPosition += 12;
+        });
+
+        // カテゴリ別統計（新しいページ）
+        if (allCategories.length > 0) {
+            doc.addPage();
+            yPosition = 20;
+
+            doc.setFontSize(14);
+            doc.text("=== カテゴリ別統計 ===", 20, yPosition);
+            yPosition += 15;
+
+            doc.setFontSize(10);
+
+            // カテゴリごとの件数を計算
+            const categoryStats = allCategories.map(category => {
+                const count = recipes.filter(recipe => recipe.categories.includes(category)).length;
+                return { category, count };
+            }).sort((a, b) => b.count - a.count);
+
+            categoryStats.forEach(stat => {
+                if (yPosition > 270) {
+                    doc.addPage();
+                    yPosition = 20;
+                }
+
+                doc.text(stat.category + ": " + stat.count + "件", 20, yPosition);
+                yPosition += 10;
+            });
+        }
+
+        // PDFファイル名の生成
+        const fileName = "Recipin_レシピデータ_" +
+            now.getFullYear() +
+            String(now.getMonth() + 1).padStart(2, '0') +
+            String(now.getDate()).padStart(2, '0') +
+            ".pdf";
+
+        // PDFをダウンロード
+        doc.save(fileName);
+
+        alert('✅ PDFファイルをエクスポートしました！\n' +
+              '総レシピ数: ' + totalRecipes + '件\n' +
+              'お気に入り: ' + favoriteRecipes + '件');
+
+    } catch (error) {
+        console.error('PDF生成エラー:', error);
+        alert('❌ PDFの生成に失敗しました。ブラウザがPDF生成をサポートしていない可能性があります。');
+    }
 }
 
 // 全データリセット機能の実装
@@ -815,6 +920,108 @@ async function confirmDataReset() {
                 alert('❌ データリセットに失敗しました: ' + error.message);
             }
         }
+    }
+}
+
+// カードクリック処理（参考URL対応）
+function handleCardClick(event) {
+    console.log('カードクリックイベント発生'); // デバッグ用ログ
+
+    // イベントの伝播を停止
+    event.stopPropagation();
+
+    // お気に入りボタンやメニューボタンがクリックされた場合は何もしない
+    if (event.target.closest('.favorite-toggle') ||
+        event.target.closest('.menu-toggle') ||
+        event.target.closest('.menu-content') ||
+        event.target.closest('.category-tag')) {
+        console.log('除外要素がクリックされました'); // デバッグ用ログ
+        return;
+    }
+
+    // カード要素を取得
+    const card = event.target.closest('.card');
+    if (!card) {
+        console.log('カード要素が見つかりません'); // デバッグ用ログ
+        return;
+    }
+
+    // 参考URLを取得
+    const referenceUrl = card.getAttribute('data-reference');
+    console.log('参考URL:', referenceUrl); // デバッグ用ログ
+
+    if (referenceUrl && referenceUrl.trim() !== '' && referenceUrl.trim() !== 'null') {
+        // URLが設定されている場合、別タブで開く
+        try {
+            // URLの検証（基本的なチェック）
+            let urlToOpen = referenceUrl.trim();
+
+            // httpまたはhttpsで始まらない場合は、httpsを追加
+            if (!urlToOpen.startsWith('http://') && !urlToOpen.startsWith('https://')) {
+                urlToOpen = 'https://' + urlToOpen;
+            }
+
+            const url = new URL(urlToOpen);
+            console.log('URLを開きます:', urlToOpen); // デバッグ用ログ
+            window.open(urlToOpen, '_blank', 'noopener,noreferrer');
+        } catch (error) {
+            console.error('URL開けませんエラー:', error); // デバッグ用ログ
+            // 無効なURLの場合はアラートを表示
+            alert('参考URLが無効です：' + referenceUrl);
+        }
+    } else {
+        // URLが設定されていない場合はメッセージを表示
+        const recipeTitle = card.querySelector('.overlay-title')?.textContent || 'このレシピ';
+        console.log('URLが未設定:', recipeTitle); // デバッグ用ログ
+        alert('「' + recipeTitle + '」には参考URLが設定されていません。');
+    }
+}
+
+// カテゴリページでのカードクリック処理
+function handleCategoryCardClick(event) {
+    console.log('カテゴリカードクリックイベント発生'); // デバッグ用ログ
+
+    // イベントの伝播を停止
+    event.stopPropagation();
+
+    // お気に入りボタンがクリックされた場合は何もしない
+    if (event.target.closest('.favorite-toggle-mini')) {
+        console.log('お気に入りボタンがクリックされました'); // デバッグ用ログ
+        return;
+    }
+
+    // カード要素を取得
+    const card = event.target.closest('.category-recipe-card');
+    if (!card) {
+        console.log('カテゴリカード要素が見つかりません'); // デバッグ用ログ
+        return;
+    }
+
+    // 参考URLを取得
+    const referenceUrl = card.getAttribute('data-reference');
+    console.log('カテゴリカード参考URL:', referenceUrl); // デバッグ用ログ
+
+    if (referenceUrl && referenceUrl.trim() !== '' && referenceUrl.trim() !== 'null') {
+        // URLが設定されている場合、別タブで開く
+        try {
+            let urlToOpen = referenceUrl.trim();
+
+            if (!urlToOpen.startsWith('http://') && !urlToOpen.startsWith('https://')) {
+                urlToOpen = 'https://' + urlToOpen;
+            }
+
+            const url = new URL(urlToOpen);
+            console.log('カテゴリカードURLを開きます:', urlToOpen); // デバッグ用ログ
+            window.open(urlToOpen, '_blank', 'noopener,noreferrer');
+        } catch (error) {
+            console.error('カテゴリカードURL開けませんエラー:', error); // デバッグ用ログ
+            alert('参考URLが無効です：' + referenceUrl);
+        }
+    } else {
+        // URLが設定されていない場合はメッセージを表示
+        const recipeTitle = card.querySelector('.recipe-title')?.textContent || 'このレシピ';
+        console.log('カテゴリカードURLが未設定:', recipeTitle); // デバッグ用ログ
+        alert('「' + recipeTitle + '」には参考URLが設定されていません。');
     }
 }
 

@@ -1,5 +1,8 @@
 // サイドバーのアクティブ状態管理（修正版）
 
+// モーダル表示前の状態を保存する変数
+let previousActiveState = null;
+
 function updateSidebarActiveState() {
     const currentPath = window.location.pathname;
     const sidebarItems = document.querySelectorAll('.sidebar ul li');
@@ -53,10 +56,76 @@ function updateSidebarActiveState() {
     }
 }
 
+// 現在のアクティブ状態を保存する関数
+function saveActiveState() {
+    const activeItem = document.querySelector('.sidebar ul li.active');
+    if (activeItem) {
+        const link = activeItem.querySelector('a');
+        const menuItem = activeItem.querySelector('.menu-item');
+
+        if (link) {
+            const href = link.getAttribute('href');
+            const spanText = link.querySelector('span')?.textContent;
+            previousActiveState = { type: 'link', href, spanText };
+        } else if (menuItem) {
+            const spanText = menuItem.querySelector('span')?.textContent;
+            previousActiveState = { type: 'menu', spanText };
+        }
+    } else {
+        previousActiveState = null;
+    }
+
+    console.log('保存されたアクティブ状態:', previousActiveState);
+}
+
+// 保存されたアクティブ状態を復元する関数
+function restoreActiveState() {
+    if (!previousActiveState) {
+        updateSidebarActiveState();
+        return;
+    }
+
+    console.log('復元するアクティブ状態:', previousActiveState);
+
+    const sidebarItems = document.querySelectorAll('.sidebar ul li');
+
+    // すべてのアクティブ状態をリセット
+    sidebarItems.forEach(item => {
+        item.classList.remove('active');
+    });
+
+    // 保存された状態に基づいて復元
+    sidebarItems.forEach(item => {
+        const link = item.querySelector('a');
+        const menuItem = item.querySelector('.menu-item');
+
+        if (previousActiveState.type === 'link' && link) {
+            const href = link.getAttribute('href');
+            const spanText = link.querySelector('span')?.textContent;
+
+            if (href === previousActiveState.href && spanText === previousActiveState.spanText) {
+                item.classList.add('active');
+                console.log('リンクアクティブ状態復元:', spanText);
+            }
+        } else if (previousActiveState.type === 'menu' && menuItem) {
+            const spanText = menuItem.querySelector('span')?.textContent;
+
+            if (spanText === previousActiveState.spanText) {
+                item.classList.add('active');
+                console.log('メニューアクティブ状態復元:', spanText);
+            }
+        }
+    });
+
+    // 復元後は保存状態をクリア
+    previousActiveState = null;
+}
+
 // カテゴリページ表示時のアクティブ状態更新（home.htmlでのみ使用）
 function showCategoriesPageWithActive() {
     // showCategoriesPage関数が存在する場合のみ実行
     if (typeof showCategoriesPage === 'function') {
+        saveActiveState(); // 現在の状態を保存
         showCategoriesPage();
         // カテゴリ表示後にアクティブ状態を更新
         setTimeout(updateSidebarActiveState, 100);
@@ -67,8 +136,8 @@ function hideCategoriesPageWithActive() {
     // hideCategoriesPage関数が存在する場合のみ実行
     if (typeof hideCategoriesPage === 'function') {
         hideCategoriesPage();
-        // カテゴリ非表示後にアクティブ状態を更新
-        setTimeout(updateSidebarActiveState, 100);
+        // カテゴリ非表示後にアクティブ状態を復元
+        setTimeout(restoreActiveState, 100);
     }
 }
 
@@ -76,6 +145,7 @@ function hideCategoriesPageWithActive() {
 function showUserInfoWithActive() {
     // showUserInfo関数が存在する場合のみ実行
     if (typeof showUserInfo === 'function') {
+        saveActiveState(); // 現在の状態を保存
         showUserInfo();
         // ユーザー情報表示中はサイドバーアクティブ状態を一時的に変更
         setTimeout(() => {
@@ -92,6 +162,7 @@ function showUserInfoWithActive() {
 function showSettingsWithActive() {
     // showSettings関数が存在する場合のみ実行
     if (typeof showSettings === 'function') {
+        saveActiveState(); // 現在の状態を保存
         showSettings();
         // 設定表示中はサイドバーアクティブ状態を一時的に変更
         setTimeout(() => {
@@ -108,6 +179,7 @@ function showSettingsWithActive() {
 function showHelpWithActive() {
     // showHelp関数が存在する場合のみ実行
     if (typeof showHelp === 'function') {
+        saveActiveState(); // 現在の状態を保存
         showHelp();
         // ヘルプ表示中はサイドバーアクティブ状態を一時的に変更
         setTimeout(() => {
@@ -126,11 +198,11 @@ function closeModalWithActive() {
     // closeModal関数が存在する場合のみ実行
     if (typeof closeModal === 'function') {
         closeModal();
-        setTimeout(updateSidebarActiveState, 100);
+        setTimeout(restoreActiveState, 100);
     } else if (typeof closeFormModal === 'function') {
         // recipe_form.htmlの場合
         closeFormModal();
-        setTimeout(updateSidebarActiveState, 100);
+        setTimeout(restoreActiveState, 100);
     }
 }
 

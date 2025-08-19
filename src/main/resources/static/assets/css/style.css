@@ -649,6 +649,34 @@ a.back-button:hover {
   color: #333;
 }
 
+/* クリック可能カードのスタイル */
+.clickable-card {
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+/*.clickable-card:hover {
+  transform: scale(1.02);
+}*/
+
+/* 参考URL設定済みカードの識別アイコン */
+/*.card[data-reference]:not([data-reference=""]):not([data-reference="null"]) .card-image-wrapper::after {
+  content: "🔗";
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  z-index: 5;
+}*/
+
 /* カテゴリタグ */
 .category-tag {
   display: inline-block;
@@ -747,28 +775,34 @@ a.back-button:hover {
   min-height: 20px;
 }
 
-.category-tag.和食 { background-color: #F1948A; }
-.category-tag.洋食 { background-color: #85C1E9; }
+.category-tag.和食 { background-color: #F1948A; color: #333; }
+.category-tag.洋食 { background-color: #85C1E9; color: #333; }
 .category-tag.中華 { background-color: #F7DC6F; color: #333; }
 .category-tag.イタリアン { background-color: #FFCCE5; color: #333; }
-.category-tag.麺類 { background-color: #FAD7A0; }
+.category-tag.フレンチ { background-color: #E6EE9C; color: #333; }
+.category-tag.韓国料理 { background-color: #FFAB91; color: #333; }
+.category-tag.麺類 { background-color: #FAD7A0; color: #333; }
 .category-tag.パスタ { background-color: #FFD580; color: #333; }
 .category-tag.揚げ物 { background-color: #F7C59F; color: #333; }
 .category-tag.肉料理 { background-color: #F5B7B1; color: #333; }
 .category-tag.魚料理 { background-color: #A3D5FF; color: #333; }
 .category-tag.たまご料理 { background-color: #F8E1A1; color: #333; }
-.category-tag.スープ { background-color: #FFE082; }
-.category-tag.サラダ { background-color: #A9DFBF; }
-.category-tag.おつまみ { background-color: #CA6F1E; }
-.category-tag.デザート { background-color: #BB8FCE; }
+.category-tag.スープ { background-color: #FFE082; color: #333; }
+.category-tag.サラダ { background-color: #A9DFBF; color: #333; }
+.category-tag.おつまみ { background-color: #CA6F1E; color: #333; }
+.category-tag.デザート { background-color: #BB8FCE; color: #333; }
 .category-tag.お菓子 { background-color: #FFE5B4; color: #333; }
 .category-tag.時短 { background-color: #AED6F1; color: #333; }
-.category-tag.ヘルシー { background-color: #76D7C4; }
+.category-tag.ヘルシー { background-color: #76D7C4; color: #333; }
+.category-tag.高タンパク { background-color: #C5E1A5; color: #333; }
+.category-tag.作り置き { background-color: #AED581; color: #333; }
 .category-tag.朝食 { background-color: #FFF2B2; color: #333; }
+.category-tag.ランチ { background-color: #FFF59D; color: #333; }
+.category-tag.ディナー { background-color: #B39DDB; color: #333; }
 .category-tag.夜食 { background-color: #C5CAE9; color: #333; }
 .category-tag.弁当 { background-color: #A9E5BB; color: #333; }
 .category-tag.パーティー料理 { background-color: #E6B0F0; color: #333; }
-.category-tag.その他 { background-color: #AAB7B8; }
+.category-tag.その他 { background-color: #AAB7B8; color: #333; }
 
 /* カテゴリ制限メッセージのスタイル（強化版） */
 .category-limit-message {

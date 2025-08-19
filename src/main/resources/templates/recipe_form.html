@@ -12,6 +12,9 @@
 
     <link rel="stylesheet" href="/assets/css/sanitize.css">
     <link rel="stylesheet" href="/assets/css/style.css">
+
+    <!-- jsPDF for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body class="page-add">
 <div class="container">
@@ -184,6 +187,8 @@
                                 <label class="option"><input type="checkbox" data-category="洋食" th:checked="${recipe.categories != null and recipe.categories.contains('洋食')}"> 洋食</label>
                                 <label class="option"><input type="checkbox" data-category="中華" th:checked="${recipe.categories != null and recipe.categories.contains('中華')}"> 中華</label>
                                 <label class="option"><input type="checkbox" data-category="イタリアン" th:checked="${recipe.categories != null and recipe.categories.contains('イタリアン')}"> イタリアン</label>
+                                <label class="option"><input type="checkbox" data-category="フレンチ" th:checked="${recipe.categories != null and recipe.categories.contains('フレンチ')}"> フレンチ</label>
+                                <label class="option"><input type="checkbox" data-category="韓国料理" th:checked="${recipe.categories != null and recipe.categories.contains('韓国料理')}"> 韓国料理</label>
                                 <label class="option"><input type="checkbox" data-category="麺類" th:checked="${recipe.categories != null and recipe.categories.contains('麺類')}"> 麺類</label>
                                 <label class="option"><input type="checkbox" data-category="パスタ" th:checked="${recipe.categories != null and recipe.categories.contains('パスタ')}"> パスタ</label>
                                 <label class="option"><input type="checkbox" data-category="揚げ物" th:checked="${recipe.categories != null and recipe.categories.contains('揚げ物')}"> 揚げ物</label>
@@ -197,7 +202,11 @@
                                 <label class="option"><input type="checkbox" data-category="お菓子" th:checked="${recipe.categories != null and recipe.categories.contains('お菓子')}"> お菓子</label>
                                 <label class="option"><input type="checkbox" data-category="時短" th:checked="${recipe.categories != null and recipe.categories.contains('時短')}"> 時短</label>
                                 <label class="option"><input type="checkbox" data-category="ヘルシー" th:checked="${recipe.categories != null and recipe.categories.contains('ヘルシー')}"> ヘルシー</label>
+                                <label class="option"><input type="checkbox" data-category="高タンパク" th:checked="${recipe.categories != null and recipe.categories.contains('高タンパク')}"> 高タンパク</label>
+                                <label class="option"><input type="checkbox" data-category="作り置き" th:checked="${recipe.categories != null and recipe.categories.contains('作り置き')}"> 作り置き</label>
                                 <label class="option"><input type="checkbox" data-category="朝食" th:checked="${recipe.categories != null and recipe.categories.contains('朝食')}"> 朝食</label>
+                                <label class="option"><input type="checkbox" data-category="ランチ" th:checked="${recipe.categories != null and recipe.categories.contains('ランチ')}"> ランチ</label>
+                                <label class="option"><input type="checkbox" data-category="ディナー" th:checked="${recipe.categories != null and recipe.categories.contains('ディナー')}"> ディナー</label>
                                 <label class="option"><input type="checkbox" data-category="夜食" th:checked="${recipe.categories != null and recipe.categories.contains('夜食')}"> 夜食</label>
                                 <label class="option"><input type="checkbox" data-category="弁当" th:checked="${recipe.categories != null and recipe.categories.contains('弁当')}"> 弁当</label>
                                 <label class="option"><input type="checkbox" data-category="パーティー料理" th:checked="${recipe.categories != null and recipe.categories.contains('パーティー料理')}"> パーティー料理</label>
@@ -290,6 +299,11 @@
         localStorage.setItem('compactView', isCompact ? 'true' : 'false');
     }
 
+    // PDFエクスポート機能（フォーム画面用）
+    function exportData() {
+        alert('PDFエクスポート機能は、レシピ一覧ページからご利用ください。\n\n「戻る」ボタンでホームに移動してから、設定メニューよりエクスポートできます。');
+    }
+
     function showModal(title, content) {
         const existingModal = document.getElementById('formModalOverlay');
         if (existingModal) {
@@ -356,6 +370,10 @@
                     </div>
                 </div>
                 <div class="settings-section">
+                    <h5>📊 データ管理</h5>
+                    <button class="settings-btn" onclick="exportData()">📄 PDFをエクスポート</button>
+                </div>
+                <div class="settings-section">
                     <h5>ℹ️ アプリ情報</h5>
                     <p><strong>バージョン:</strong> 1.0.0</p>
                     <p><strong>最終更新:</strong> 2024年</p>
@@ -409,6 +427,14 @@
                 <div class="help-section">
                     <h5>🎲 ランダムレシピ</h5>
                     <p>サイドバーから「ランダムレシピ」を選ぶと、登録済みレシピからランダムに1つ表示されます。</p>
+                </div>
+                <div class="help-section">
+                    <h5>🔗 参考URLの活用</h5>
+                    <p>参考動画・サイト（URL）を設定すると、レシピカードをクリックした時に別タブで開けます。</p>
+                </div>
+                <div class="help-section">
+                    <h5>📄 PDFエクスポート</h5>
+                    <p>レシピ一覧ページの設定メニューから、レシピデータをPDFファイルとしてダウンロードできます。</p>
                 </div>
             </div>
         `;
