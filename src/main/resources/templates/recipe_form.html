@@ -243,6 +243,19 @@
     </main>
 </div>
 
+<!-- モーダルダイアログ -->
+<div id="formModalOverlay" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="formModalTitle">タイトル</h3>
+            <button class="modal-close" onclick="closeFormModal()">&times;</button>
+        </div>
+        <div class="modal-body" id="formModalBody">
+            <!-- 動的にコンテンツが挿入される -->
+        </div>
+    </div>
+</div>
+
 <script>
     // フォーム画面用ダークモード対応
     class FormDarkModeManager {
@@ -305,47 +318,15 @@
     }
 
     function showModal(title, content) {
-        const existingModal = document.getElementById('formModalOverlay');
-        if (existingModal) {
-            existingModal.remove();
-        }
-        const modalHTML = `
-            <div id="formModalOverlay" class="modal-overlay" style="display: flex;">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h3>${title}</h3>
-                        <button class="modal-close" onclick="closeFormModal()">&times;</button>
-                    </div>
-                    <div class="modal-body">
-                        ${content}
-                    </div>
-                    <div class="modal-footer">
-                        <button class="modal-btn" onclick="closeFormModal()">閉じる</button>
-                    </div>
-                </div>
-            </div>
-        `;
-        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        document.getElementById('formModalTitle').textContent = title;
+        document.getElementById('formModalBody').innerHTML = content;
+        document.getElementById('formModalOverlay').style.display = 'flex';
         document.body.style.overflow = 'hidden';
-        document.addEventListener('keydown', function escHandler(e) {
-            if (e.key === 'Escape') {
-                closeFormModal();
-                document.removeEventListener('keydown', escHandler);
-            }
-        });
-        document.getElementById('formModalOverlay').addEventListener('click', function(e) {
-            if (e.target.id === 'formModalOverlay') {
-                closeFormModal();
-            }
-        });
     }
 
     function closeFormModal() {
-        const modal = document.getElementById('formModalOverlay');
-        if (modal) {
-            modal.remove();
-            document.body.style.overflow = 'auto';
-        }
+        document.getElementById('formModalOverlay').style.display = 'none';
+        document.body.style.overflow = 'auto';
     }
 
     function showSettings() {
@@ -397,15 +378,52 @@
         }
     }
 
-    function showUserInfo() {
-        const userInfo = `
-            <div class="user-stats">
-                <h4>👤 ユーザー情報</h4>
-                <p><strong>現在のページ:</strong> レシピフォーム</p>
-                <p><strong>登録日:</strong> 2024年</p>
-            </div>
-        `;
-        showModal('ユーザー情報', userInfo);
+    // ユーザー情報表示（修正版 - サーバーからデータを取得）
+    async function showUserInfo() {
+        try {
+            // サーバーから統計情報を取得
+            const response = await fetch('/api/stats', {
+                method: 'GET',
+                credentials: 'same-origin'
+            });
+
+            if (!response.ok) {
+                throw new Error('統計情報の取得に失敗しました');
+            }
+
+            const stats = await response.json();
+
+            const userInfo = `
+                <div class="user-stats">
+                    <h4>📊 統計情報</h4>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <span class="stat-number">${stats.totalRecipes}</span>
+                            <span class="stat-label">総レシピ数</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number">${stats.favoriteRecipes}</span>
+                            <span class="stat-label">お気に入り数</span>
+                        </div>
+                    </div>
+                    <h4>👤 ユーザー情報</h4>
+                    <p><strong>現在のページ:</strong> レシピフォーム</p>
+                    <p><strong>登録日:</strong> 2024年</p>
+                </div>
+            `;
+            showModal('ユーザー情報', userInfo);
+        } catch (error) {
+            console.error('ユーザー情報取得エラー:', error);
+            // エラー時はフォールバック
+            const userInfo = `
+                <div class="user-stats">
+                    <h4>👤 ユーザー情報</h4>
+                    <p><strong>現在のページ:</strong> レシピフォーム</p>
+                    <p><strong>登録日:</strong> 2024年</p>
+                </div>
+            `;
+            showModal('ユーザー情報', userInfo);
+        }
     }
 
     function showHelp() {
@@ -487,7 +505,11 @@
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             const sidebar = document.getElementById('sidebar');
-            if (sidebar.classList.contains('active')) {
+            const modal = document.getElementById('formModalOverlay');
+
+            if (modal && modal.style.display === 'flex') {
+                closeFormModal();
+            } else if (sidebar.classList.contains('active')) {
                 sidebar.classList.remove('active');
             }
         }
@@ -828,6 +850,13 @@
                     }
                 }, 300);
             }, 5000); // 5秒後に非表示
+        });
+
+        // モーダル外クリックで閉じる
+        document.getElementById('formModalOverlay').addEventListener('click', function(e) {
+            if (e.target.id === 'formModalOverlay') {
+                closeFormModal();
+            }
         });
 
         console.log('フォーム初期化完了');

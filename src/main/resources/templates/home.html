@@ -205,9 +205,6 @@
                 <div class="section-title">
                     <h2>📂 カテゴリ別レシピ一覧</h2>
                 </div>
-                <button class="back-button" onclick="hideCategoriesPage()">
-                    <span>← 戻る</span>
-                </button>
             </div>
             <div id="categoriesContainer">
                 <!-- 動的にカテゴリ別レシピが挿入される -->
@@ -225,9 +222,6 @@
         </div>
         <div class="modal-body" id="modalBody">
             <!-- 動的にコンテンツが挿入される -->
-        </div>
-        <div class="modal-footer">
-            <button class="modal-btn" onclick="closeModal()">閉じる</button>
         </div>
     </div>
 </div>
@@ -578,27 +572,63 @@ function bindFavoriteTogglesMini() {
     });
 }
 
-// ユーザー情報表示
-function showUserInfo() {
-    const userInfo = `
-        <div class="user-stats">
-            <h4>📊 統計情報</h4>
-            <div class="stats-grid">
-                <div class="stat-item">
-                    <span class="stat-number">${document.querySelectorAll('.card').length}</span>
-                    <span class="stat-label">総レシピ数</span>
+// ユーザー情報表示（修正版 - サーバーからデータを取得）
+async function showUserInfo() {
+    try {
+        // サーバーから統計情報を取得
+        const response = await fetch('/api/stats', {
+            method: 'GET',
+            credentials: 'same-origin'
+        });
+
+        if (!response.ok) {
+            throw new Error('統計情報の取得に失敗しました');
+        }
+
+        const stats = await response.json();
+
+        const userInfo = `
+            <div class="user-stats">
+                <h4>📊 統計情報</h4>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-number">${stats.totalRecipes}</span>
+                        <span class="stat-label">総レシピ数</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">${stats.favoriteRecipes}</span>
+                        <span class="stat-label">お気に入り数</span>
+                    </div>
                 </div>
-                <div class="stat-item">
-                    <span class="stat-number">${document.querySelectorAll('.card .heart-image[src*="heart_active"]').length}</span>
-                    <span class="stat-label">お気に入り数</span>
-                </div>
+                <h4>👤 ユーザー情報</h4>
+                <p><strong>ユーザー名:</strong> ${document.querySelector('.user-info span') ? document.querySelector('.user-info span').textContent.replace('ようこそ、', '').replace('さん', '') : 'ゲスト'}</p>
+                <p><strong>登録日:</strong> 2024年</p>
             </div>
-            <h4>👤 ユーザー情報</h4>
-            <p><strong>ユーザー名:</strong> ${document.querySelector('.user-info span') ? document.querySelector('.user-info span').textContent.replace('ようこそ、', '').replace('さん', '') : 'ゲスト'}</p>
-            <p><strong>登録日:</strong> 2024年</p>
-        </div>
-    `;
-    showModal('ユーザー情報', userInfo);
+        `;
+        showModal('ユーザー情報', userInfo);
+    } catch (error) {
+        console.error('ユーザー情報取得エラー:', error);
+        // エラー時はフォールバック（現在表示されているレシピから計算）
+        const userInfo = `
+            <div class="user-stats">
+                <h4>📊 統計情報</h4>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-number">${document.querySelectorAll('.card').length}</span>
+                        <span class="stat-label">総レシピ数</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">${document.querySelectorAll('.card .heart-image[src*="heart_active"]').length}</span>
+                        <span class="stat-label">お気に入り数</span>
+                    </div>
+                </div>
+                <h4>👤 ユーザー情報</h4>
+                <p><strong>ユーザー名:</strong> ${document.querySelector('.user-info span') ? document.querySelector('.user-info span').textContent.replace('ようこそ、', '').replace('さん', '') : 'ゲスト'}</p>
+                <p><strong>登録日:</strong> 2024年</p>
+            </div>
+        `;
+        showModal('ユーザー情報', userInfo);
+    }
 }
 
 // ヘルプ表示
